@@ -1,5 +1,5 @@
 import { IWilder } from "../components/components";
-import { useEffect, useMemo, useState, useCallback } from "react";
+import { useEffect, useMemo, useState, useCallback, useRef } from "react";
 import {
   NavigateFunction,
   useNavigate,
@@ -10,7 +10,8 @@ import { IMessageWithSuccess, InitialWilder } from "./pages.d";
 function Formulaire(): JSX.Element {
   const navigate: NavigateFunction = useNavigate(); //récupération de la méthode de navigation depuis useNavigate
   const [searchparams]: [URLSearchParams, Function] = useSearchParams();
-  const controller: AbortController = new AbortController(); //permettra d'annuler la requête au déchargement du composant
+  // const controller: AbortController = new AbortController(); //permettra d'annuler la requête au déchargement du composant
+  const controller = useRef(new AbortController());
 
   const initialState: InitialWilder = useMemo(
     // le type InitialWilder est comme IWilder mais sans les notes et avec l'id  null (voir le fichier de définition)
@@ -27,9 +28,12 @@ function Formulaire(): JSX.Element {
   //méthode appelée lors du submit du formulaire
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>): void => {
     e.preventDefault(); //on stope le comportement par défaut du formulaire à partir de l'évènement du submit, pour éviter de rafraichir la page et nous permettre de travailler de manière programmée les données
-    console.log("TEST", `${process.env.REACT_APP_BACK_URL}/wilder/update/${state.id}`);
+    console.log(
+      "TEST",
+      `${process.env.REACT_APP_BACK_URL}/wilder/update/${state.id}`
+    );
     const createOrEditWilder = async (): Promise<void> => {
-      let signal: AbortSignal = controller.signal;
+      let signal: AbortSignal = controller.current.signal;
       try {
         let response: Response = await fetch(
           state.id
@@ -48,36 +52,20 @@ function Formulaire(): JSX.Element {
         navigate("/"); //on basculer sur l'accueil si tout s'est bien passé
         // return redirect('http://localhost:3000')
       } catch (err) {
-        console.log('%c⧭', 'color: #aa00ff', err);
+        console.log("%c⧭", "color: #aa00ff", err);
         console.log("une erreur s'est produite");
       }
     };
     createOrEditWilder();
   };
 
-  // const getWilder = async (id: string): Promise<void> => {
-  // const getWilder = useCallback(
-  //   async (id: string): Promise<void> => {
-  //     let response = await fetch(
-  //       `${process.env.REACT_APP_BACK_URL}/wilder/find/${id}`
-  //       );
-  //       const result: IWilder | IMessageWithSuccess = await response.json();
-  //     if (response.status !== 200 && "success" in result && !result.success) {
-  //       // le "success" in result permet de savoir si je suis dans le cas d'un IMessageWithSuccess ou non, puisque "result" peut être de type IWilder ou IMessageWithSuccess
-  //       //pensez à regarder l'opérateur "in" ici : https://www.typescriptlang.org/docs/handbook/2/narrowing.html#the-in-operator-narrowing
-  //       return navigate("/errors/404");
-  //     }
-  //     setState(result as IWilder); //puisque "result" peut être de type IWilder ou ImessageWithSuccess
-  //   },
-  //   [navigate]
-  // );
   const getWilder = useCallback(
     async (id: string): Promise<void> => {
       let response = await fetch(
         `${process.env.REACT_APP_BACK_URL}/wilder/find/${id}`
-        );
-        const result: IWilder | IMessageWithSuccess = await response.json();
-        console.log('%c⧭', 'color: #733d00', result);
+      );
+      const result: IWilder | IMessageWithSuccess = await response.json();
+      console.log("%c⧭", "color: #733d00", result);
       if (response.status !== 200 && "success" in result && !result.success) {
         // le "success" in result permet de savoir si je suis dans le cas d'un IMessageWithSuccess ou non, puisque "result" peut être de type IWilder ou IMessageWithSuccess
         //pensez à regarder l'opérateur "in" ici : https://www.typescriptlang.org/docs/handbook/2/narrowing.html#the-in-operator-narrowing
@@ -88,8 +76,9 @@ function Formulaire(): JSX.Element {
     [navigate]
   );
   useEffect(() => {
-    return () => controller.abort();
-  }, [state, controller]);
+    const control = controller.current;
+    return () => control.abort();
+  }, [state]);
 
   useEffect(() => {
     const id: string | null = searchparams.get("id");
