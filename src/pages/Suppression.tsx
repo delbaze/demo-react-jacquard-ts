@@ -10,7 +10,7 @@ import { useEffect, useState } from "react";
 function Suppression(): JSX.Element {
   const { id }: Readonly<Params<string>> = useParams();
   const [state, setState] = useState<IWilder | null>(null);
-  const [error, setError] = useState("");
+  const [error, setError] = useState<string>("");
   const navigate: NavigateFunction = useNavigate();
 
   const handleSubmit = async (
@@ -37,11 +37,11 @@ function Suppression(): JSX.Element {
         `${process.env.REACT_APP_BACK_URL}/wilder/find/${id}`,
         { signal }
       );
-      let data = await response.json();
-      if (!data.success && response.status !== 200) {
+      const result: IWilder | IMessageWithSuccess = await response.json();
+      if (response.status !== 200 && "success" in result && !result.success) {
         return navigate("/errors/404");
       }
-      setState(data);
+      setState(result as IWilder);
     };
     recupData();
 

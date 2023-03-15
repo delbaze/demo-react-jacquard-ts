@@ -1,7 +1,7 @@
 import { INote } from "./components.d";
 
 function Languages({ notes }: { notes: INote[] }): JSX.Element {
-  // const Languages: React.FC<{ notes: INote[] }> = ({ notes }) => {
+// const Languages: React.FC<{ notes: INote[] }> = ({ notes }) => {
   //la ligne du dessus est une autre manière de définir une fonction comme un composant React (FC pour Function Component).
   //Notez bien que l'écriture diffère déjà de part la fonction fléchée  mais au delà de celà, il n'y a plus le : JSX.Element.
   //React.FC  ajoute la vérification du type et l'autocomplétion pour les propriétés statiques telles que "displayName", "propTypes",  "defaultProps", ou encore "displayName"
@@ -19,6 +19,6 @@ function Languages({ notes }: { notes: INote[] }): JSX.Element {
       </ul>
     </div>
   );
-}
+};
 
 export default Languages;
