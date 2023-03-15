@@ -1,16 +1,39 @@
-import { useParams, useNavigate } from "react-router-dom";
+import { IMessageWithSuccess } from "./pages.d";
+import { IWilder } from "../components/components";
+import {
+  NavigateFunction,
+  Params,
+  useNavigate,
+  useParams,
+} from "react-router-dom";
 import { useEffect, useState } from "react";
-function Suppression() {
-  const { id } = useParams();
-  const [state, setState] = useState({});
+function Suppression(): JSX.Element {
+  const { id }: Readonly<Params<string>> = useParams();
+  const [state, setState] = useState<IWilder | null>(null);
   const [error, setError] = useState("");
-  const navigate = useNavigate();
+  const navigate: NavigateFunction = useNavigate();
+
+  const handleSubmit = async (
+    e: React.FormEvent<HTMLFormElement>
+  ): Promise<void> => {
+    e.preventDefault();
+    let response = await fetch(
+      `${process.env.REACT_APP_BACK_URL}/wilder/delete/${id}`,
+      { method: "DELETE" }
+    );
+    const data: IMessageWithSuccess = await response.json();
+    console.log(data);
+    if (data.success) {
+      return navigate("/");
+    }
+    setError(data.message);
+  };
 
   useEffect(() => {
-    const controller = new AbortController();
+    const controller: AbortController = new AbortController();
     const recupData = async () => {
-      const signal = controller.signal;
-      let response = await fetch(
+      const signal: AbortSignal = controller.signal;
+      let response: Response = await fetch(
         `${process.env.REACT_APP_BACK_URL}/wilder/find/${id}`,
         { signal }
       );
@@ -24,19 +47,7 @@ function Suppression() {
 
     return () => controller.abort();
   }, []);
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    let response = await fetch(
-      `${process.env.REACT_APP_BACK_URL}/wilder/delete/${id}`,
-      { method: "DELETE" }
-    );
-    const data = await response.json();
-    console.log(data);
-    if (data.success) {
-      return navigate("/");
-    }
-    setError(data.message);
-  };
+
   return (
     <div>
       <form onSubmit={handleSubmit}>

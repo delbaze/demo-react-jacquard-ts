@@ -1,14 +1,14 @@
+import Accueil from './pages/Accueil';
+import Formulaire from './pages/Formulaire';
+import Liste from './components/Liste';
+import NotFound from './pages/errors/NotFound';
+import Suppression from './pages/Suppression';
+import { Route, Routes } from 'react-router-dom';
+import './App.css';
 // import logo from "./logo.svg";
-import "./App.css";
-import { Routes, Route } from "react-router-dom";
-import Accueil from "./pages/Accueil";
-import Formulaire from "./pages/Formulaire";
-import Suppression from "./pages/Suppression";
-import Liste from "./components/Liste";
-import NotFound from "./pages/errors/NotFound";
 //module bundler
 
-function App() {
+function App(): JSX.Element {
   return (
     <div className="App">
       <Routes>

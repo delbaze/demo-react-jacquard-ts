@@ -1,30 +1,37 @@
-import { useState, useEffect } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom"; //hook permettant de gérer la navigation depuis react router dom
+import { IWilder } from "../components/components";
+import { useEffect, useState } from "react";
+import {
+  NavigateFunction,
+  useNavigate,
+  useSearchParams,
+} from "react-router-dom"; //hook permettant de gérer la navigation depuis react router dom
+import { IMessageWithSuccess, InitialWilder } from "./pages.d";
 
-function Formulaire() {
-  const navigate = useNavigate(); //récupération de la méthode de navigation depuis useNavigate
-  const [searchparams] = useSearchParams();
-  const controller = new AbortController(); //permettra d'annuler la requête au déchargement du composant
-  const initialState = {
+function Formulaire(): JSX.Element {
+  const navigate: NavigateFunction = useNavigate(); //récupération de la méthode de navigation depuis useNavigate
+  const [searchparams]: [URLSearchParams, Function] = useSearchParams();
+  const controller: AbortController = new AbortController(); //permettra d'annuler la requête au déchargement du composant
+  const initialState: InitialWilder = {
+    // le type InitialWilder est comme IWilder mais sans les notes et avec l'id  null (voir le fichier de définition)
     //on déclare un état "state" qui contient un objet
     id: null,
     first_name: "",
     last_name: "",
     email: "",
   };
-  const [state, setState] = useState(initialState);
+  const [state, setState] = useState<InitialWilder | IWilder>(initialState);
   //au changement de chaque input je vais récupérer le name depuis l'évènement, pour pouvoir atteindre dynamiquement la clé de l'objet "state"
-  const handleChange = (e) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
     setState((state) => ({ ...state, [e.target.name]: e.target.value })); //setState((state) => ({...state, first_name: e.target.value }))
     //au dessus on récupère le state dans le dernier état connu car setState, étant asynchrone, il est préférable de forcer la récupération du dernier état pour travailler avec.
   };
   //méthode appelée lors du submit du formulaire
-  const handleSubmit = (e) => {
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>): void => {
     e.preventDefault(); //on stope le comportement par défaut du formulaire à partir de l'évènement du submit, pour éviter de rafraichir la page et nous permettre de travailler de manière programmée les données
-    const createOrEditWilder = async () => {
-      let signal = controller.signal;
+    const createOrEditWilder = async (): Promise<void> => {
+      let signal: AbortSignal = controller.signal;
       try {
-        let response = await fetch(
+        let response: Response = await fetch(
           state.id
             ? `${process.env.REACT_APP_BACK_URL}/wilder/update/${state.id}`
             : `${process.env.REACT_APP_BACK_URL}/wilder/create`,
@@ -37,7 +44,7 @@ function Formulaire() {
             body: JSON.stringify(state), //le body doit être en chaine de caractère pour fetch, d'où le JSON.stringify()
           }
         );
-        let data = await response.json(); //on attend le traitement json de la réponse.
+        await response.json(); //on attend le traitement json de la réponse.
         navigate("/"); //on basculer sur l'accueil si tout s'est bien passé
         // return redirect('http://localhost:3000')
       } catch (err) {
@@ -47,30 +54,29 @@ function Formulaire() {
     createOrEditWilder();
   };
 
-  const getWilder = async (id) => {
+  const getWilder = async (id: string): Promise<void> => {
     let response = await fetch(
       `${process.env.REACT_APP_BACK_URL}/wilder/find/${id}`
     );
-    const wilder = await response.json();
-    if (!wilder.success && response.status !== 200) {
+    const result: IWilder | IMessageWithSuccess = await response.json();
+    if (response.status !== 200 && "success" in result && !result.success) {
+      // le "success" in result permet de savoir si je suis dans le cas d'un IMessageWithSuccess ou non, puisque "result" peut être de type IWilder ou IMessageWithSuccess
+      //pensez à regarder l'opérateur "in" ici : https://www.typescriptlang.org/docs/handbook/2/narrowing.html#the-in-operator-narrowing
       return navigate("/errors/404");
     }
-
-    setState(wilder);
+    setState(result as IWilder); //puisque "result" peut être de type IWilder ou ImessageWithSuccess
   };
   useEffect(() => {
     return () => controller.abort();
   }, [state]);
 
   useEffect(() => {
-    const id = searchparams.get("id");
-
+    const id: string | null = searchparams.get("id");
     if (id) {
-      getWilder(id);
+      getWilder(id); // lorsque le param id est défini, on va récupérer le wilder
     } else {
-      setState(initialState);
+      setState(initialState); //remet le wilder à l'état initial si je me retrouve dans l'ajout
     }
-    //penser à remettre le wilder à l'état initial si je me retrouve dans l'ajout
   }, [searchparams.get("id")]);
 
   return (

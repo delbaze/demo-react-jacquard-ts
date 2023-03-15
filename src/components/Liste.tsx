@@ -1,7 +1,8 @@
-import { useEffect, useState } from "react";
-import WilderDetail from "./WilderDetail";
-function Liste() {
-  const [wilderList, setWilderList] = useState([]);
+import WilderDetail from './WilderDetail';
+import { IWilder } from './components.d';
+import { useEffect, useState } from 'react';
+function Liste(): JSX.Element {
+  const [wilderList, setWilderList] = useState<IWilder[]>([]);
   useEffect(() => {
     const controller = new AbortController();
     const signal = controller.signal;
@@ -13,13 +14,17 @@ function Liste() {
         }
       );
       let data = await response.json();
- 
+      console.log('%c⧭', 'color: #00e600', data);
+
       setWilderList(data);
     };
     recupData();
 
     return () => controller.abort();
   }, []);
+  useEffect(() => {
+    console.log("data", wilderList)
+  }, [wilderList])
   return (
     <div>
       Liste

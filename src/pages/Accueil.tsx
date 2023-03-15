@@ -1,6 +1,6 @@
-import { Link, Outlet } from "react-router-dom";
+import { Link, Outlet } from 'react-router-dom';
 
-function Accueil() {
+function Accueil(): JSX.Element {
   return (
     <div>
       <nav>

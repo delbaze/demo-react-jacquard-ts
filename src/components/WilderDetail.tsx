@@ -1,16 +1,18 @@
-import "./WilderDetails.css";
-import Languages from "./Languages";
-import { Link } from "react-router-dom";
+import Languages from './Languages';
+import { IWilder } from './components.d';
+import { Link } from 'react-router-dom';
+import './WilderDetails.css';
 export default function WilderDetail({
-  wilder: { first_name, last_name, email, note, id },
-}) {
-
+  wilder: { first_name, last_name, email, notes, id },
+}: {
+  wilder: IWilder;
+}): JSX.Element {
   return (
     <div className="card">
       <p>{first_name}</p>
       <p>{last_name}</p>
       <p>{email}</p>
-      <Languages notes={note} />
+      <Languages notes={notes} />
       <Link to={`/create-or-edit?id=${id}`}>
         <button>Editer</button>
       </Link>

@@ -1,4 +1,6 @@
-function Languages({ notes }) {
+import { INote } from './components.d';
+
+function Languages({ notes }: { notes: INote[] }): JSX.Element {
   return (
     <div>
       <ul>
