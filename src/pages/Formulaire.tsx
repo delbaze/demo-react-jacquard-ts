@@ -65,7 +65,6 @@ function Formulaire(): JSX.Element {
         `${process.env.REACT_APP_BACK_URL}/wilder/find/${id}`
       );
       const result: IWilder | IMessageWithSuccess = await response.json();
-      console.log("%c⧭", "color: #733d00", result);
       if (response.status !== 200 && "success" in result && !result.success) {
         // le "success" in result permet de savoir si je suis dans le cas d'un IMessageWithSuccess ou non, puisque "result" peut être de type IWilder ou IMessageWithSuccess
         //pensez à regarder l'opérateur "in" ici : https://www.typescriptlang.org/docs/handbook/2/narrowing.html#the-in-operator-narrowing
@@ -75,6 +74,8 @@ function Formulaire(): JSX.Element {
     },
     [navigate]
   );
+
+  console.log("%c⧭", "color: #00bf00", getWilder);
   useEffect(() => {
     const control = controller.current;
     return () => control.abort();
