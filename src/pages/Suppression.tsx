@@ -46,7 +46,7 @@ function Suppression(): JSX.Element {
     recupData();
 
     return () => controller.abort();
-  }, []);
+  }, [id, navigate]);
 
   return (
     <div>

@@ -1,5 +1,5 @@
 import { IWilder } from "../components/components";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState, useCallback } from "react";
 import {
   NavigateFunction,
   useNavigate,
@@ -11,14 +11,13 @@ function Formulaire(): JSX.Element {
   const navigate: NavigateFunction = useNavigate(); //récupération de la méthode de navigation depuis useNavigate
   const [searchparams]: [URLSearchParams, Function] = useSearchParams();
   const controller: AbortController = new AbortController(); //permettra d'annuler la requête au déchargement du composant
-  const initialState: InitialWilder = {
+
+  const initialState: InitialWilder = useMemo(
     // le type InitialWilder est comme IWilder mais sans les notes et avec l'id  null (voir le fichier de définition)
     //on déclare un état "state" qui contient un objet
-    id: null,
-    first_name: "",
-    last_name: "",
-    email: "",
-  };
+    () => ({ id: null, first_name: "", last_name: "", email: "" }),
+    []
+  );
   const [state, setState] = useState<InitialWilder | IWilder>(initialState);
   //au changement de chaque input je vais récupérer le name depuis l'évènement, pour pouvoir atteindre dynamiquement la clé de l'objet "state"
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
@@ -28,6 +27,7 @@ function Formulaire(): JSX.Element {
   //méthode appelée lors du submit du formulaire
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>): void => {
     e.preventDefault(); //on stope le comportement par défaut du formulaire à partir de l'évènement du submit, pour éviter de rafraichir la page et nous permettre de travailler de manière programmée les données
+    console.log("TEST", `${process.env.REACT_APP_BACK_URL}/wilder/update/${state.id}`);
     const createOrEditWilder = async (): Promise<void> => {
       let signal: AbortSignal = controller.signal;
       try {
@@ -48,27 +48,48 @@ function Formulaire(): JSX.Element {
         navigate("/"); //on basculer sur l'accueil si tout s'est bien passé
         // return redirect('http://localhost:3000')
       } catch (err) {
+        console.log('%c⧭', 'color: #aa00ff', err);
         console.log("une erreur s'est produite");
       }
     };
     createOrEditWilder();
   };
 
-  const getWilder = async (id: string): Promise<void> => {
-    let response = await fetch(
-      `${process.env.REACT_APP_BACK_URL}/wilder/find/${id}`
-    );
-    const result: IWilder | IMessageWithSuccess = await response.json();
-    if (response.status !== 200 && "success" in result && !result.success) {
-      // le "success" in result permet de savoir si je suis dans le cas d'un IMessageWithSuccess ou non, puisque "result" peut être de type IWilder ou IMessageWithSuccess
-      //pensez à regarder l'opérateur "in" ici : https://www.typescriptlang.org/docs/handbook/2/narrowing.html#the-in-operator-narrowing
-      return navigate("/errors/404");
-    }
-    setState(result as IWilder); //puisque "result" peut être de type IWilder ou ImessageWithSuccess
-  };
+  // const getWilder = async (id: string): Promise<void> => {
+  // const getWilder = useCallback(
+  //   async (id: string): Promise<void> => {
+  //     let response = await fetch(
+  //       `${process.env.REACT_APP_BACK_URL}/wilder/find/${id}`
+  //       );
+  //       const result: IWilder | IMessageWithSuccess = await response.json();
+  //     if (response.status !== 200 && "success" in result && !result.success) {
+  //       // le "success" in result permet de savoir si je suis dans le cas d'un IMessageWithSuccess ou non, puisque "result" peut être de type IWilder ou IMessageWithSuccess
+  //       //pensez à regarder l'opérateur "in" ici : https://www.typescriptlang.org/docs/handbook/2/narrowing.html#the-in-operator-narrowing
+  //       return navigate("/errors/404");
+  //     }
+  //     setState(result as IWilder); //puisque "result" peut être de type IWilder ou ImessageWithSuccess
+  //   },
+  //   [navigate]
+  // );
+  const getWilder = useCallback(
+    async (id: string): Promise<void> => {
+      let response = await fetch(
+        `${process.env.REACT_APP_BACK_URL}/wilder/find/${id}`
+        );
+        const result: IWilder | IMessageWithSuccess = await response.json();
+        console.log('%c⧭', 'color: #733d00', result);
+      if (response.status !== 200 && "success" in result && !result.success) {
+        // le "success" in result permet de savoir si je suis dans le cas d'un IMessageWithSuccess ou non, puisque "result" peut être de type IWilder ou IMessageWithSuccess
+        //pensez à regarder l'opérateur "in" ici : https://www.typescriptlang.org/docs/handbook/2/narrowing.html#the-in-operator-narrowing
+        return navigate("/errors/404");
+      }
+      setState(result as IWilder); //puisque "result" peut être de type IWilder ou ImessageWithSuccess
+    },
+    [navigate]
+  );
   useEffect(() => {
     return () => controller.abort();
-  }, [state]);
+  }, [state, controller]);
 
   useEffect(() => {
     const id: string | null = searchparams.get("id");
@@ -77,7 +98,7 @@ function Formulaire(): JSX.Element {
     } else {
       setState(initialState); //remet le wilder à l'état initial si je me retrouve dans l'ajout
     }
-  }, [searchparams.get("id")]);
+  }, [searchparams, getWilder, initialState]);
 
   return (
     <div>
