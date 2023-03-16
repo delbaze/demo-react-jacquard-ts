@@ -12,8 +12,14 @@ export interface INote {
   language: ILanguage;
   wilder: IWilder;
 }
-
+export interface INoteData extends Omit<INote, "wilder"> {}
 export interface ILanguage {
   id: string;
   label: string;
+}
+
+export interface IAssignNote {
+  notes: INoteData[];
+  addNote: React.MouseEventHandler<HTMLButtonElement>;
+  changeNote: Function
 }

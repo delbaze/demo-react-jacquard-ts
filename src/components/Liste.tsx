@@ -1,30 +1,25 @@
-import WilderDetail from './WilderDetail';
-import { IWilder } from './components.d';
-import { useEffect, useState } from 'react';
+import WilderDetail from "./WilderDetail";
+import { IWilder } from "./components.d";
+import { useEffect, useRef, useState } from "react";
 function Liste(): JSX.Element {
   const [wilderList, setWilderList] = useState<IWilder[]>([]);
+  const controller = useRef(new AbortController());
+  const recupData = async () => {
+    const signal = controller.current.signal;
+    let response = await fetch(
+      `${process.env.REACT_APP_BACK_URL}/wilder/list`,
+      {
+        signal,
+      }
+    );
+    let data = await response.json();
+    setWilderList(data);
+  };
   useEffect(() => {
-    const controller = new AbortController();
-    const signal = controller.signal;
-    const recupData = async () => {
-      let response = await fetch(
-        `${process.env.REACT_APP_BACK_URL}/wilder/list`,
-        {
-          signal,
-        }
-      );
-      let data = await response.json();
-      console.log('%c⧭', 'color: #00e600', data);
-
-      setWilderList(data);
-    };
     recupData();
-
-    return () => controller.abort();
+    return () => controller.current.abort();
   }, []);
-  useEffect(() => {
-    console.log("data", wilderList)
-  }, [wilderList])
+
   return (
     <div>
       Liste

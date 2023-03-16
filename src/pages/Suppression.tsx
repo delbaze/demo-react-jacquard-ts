@@ -22,7 +22,6 @@ function Suppression(): JSX.Element {
       { method: "DELETE" }
     );
     const data: IMessageWithSuccess = await response.json();
-    console.log(data);
     if (data.success) {
       return navigate("/");
     }

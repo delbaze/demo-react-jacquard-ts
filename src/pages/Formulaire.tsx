@@ -1,17 +1,17 @@
-import { IWilder } from "../components/components";
-import { useEffect, useMemo, useState, useCallback, useRef } from "react";
+import { INoteData, IWilder } from "../components/components";
+import { useEffect, useMemo, useState, useCallback } from "react";
 import {
   NavigateFunction,
   useNavigate,
   useSearchParams,
 } from "react-router-dom"; //hook permettant de gérer la navigation depuis react router dom
+
 import { IMessageWithSuccess, InitialWilder } from "./pages.d";
+import AssignNote from "../components/AssignNote";
 
 function Formulaire(): JSX.Element {
   const navigate: NavigateFunction = useNavigate(); //récupération de la méthode de navigation depuis useNavigate
   const [searchparams]: [URLSearchParams, Function] = useSearchParams();
-  // const controller: AbortController = new AbortController(); //permettra d'annuler la requête au déchargement du composant
-  const controller = useRef(new AbortController());
 
   const initialState: InitialWilder = useMemo(
     // le type InitialWilder est comme IWilder mais sans les notes et avec l'id  null (voir le fichier de définition)
@@ -20,6 +20,7 @@ function Formulaire(): JSX.Element {
     []
   );
   const [state, setState] = useState<InitialWilder | IWilder>(initialState);
+  const [notes, setNotes] = useState<INoteData[]>([]);
   //au changement de chaque input je vais récupérer le name depuis l'évènement, pour pouvoir atteindre dynamiquement la clé de l'objet "state"
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
     setState((state) => ({ ...state, [e.target.name]: e.target.value })); //setState((state) => ({...state, first_name: e.target.value }))
@@ -28,35 +29,33 @@ function Formulaire(): JSX.Element {
   //méthode appelée lors du submit du formulaire
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>): void => {
     e.preventDefault(); //on stope le comportement par défaut du formulaire à partir de l'évènement du submit, pour éviter de rafraichir la page et nous permettre de travailler de manière programmée les données
-    console.log(
-      "TEST",
-      `${process.env.REACT_APP_BACK_URL}/wilder/update/${state.id}`
-    );
+
     const createOrEditWilder = async (): Promise<void> => {
-      let signal: AbortSignal = controller.current.signal;
       try {
         let response: Response = await fetch(
           state.id
             ? `${process.env.REACT_APP_BACK_URL}/wilder/update/${state.id}`
             : `${process.env.REACT_APP_BACK_URL}/wilder/create`,
           {
-            signal, //injection du signal permettant ensuite l'annulation de la requête
             method: state.id ? "PATCH" : "POST", //ne pas oublier le post ici puisque par défaut fetch est en GET
             headers: {
               "Content-Type": "application/json", //permet d'indiquer dans la requête que nous envoyons du json
             },
-            body: JSON.stringify(state), //le body doit être en chaine de caractère pour fetch, d'où le JSON.stringify()
+            body: JSON.stringify({ ...state, notes }), //le body doit être en chaine de caractère pour fetch, d'où le JSON.stringify()
           }
         );
         await response.json(); //on attend le traitement json de la réponse.
         navigate("/"); //on basculer sur l'accueil si tout s'est bien passé
-        // return redirect('http://localhost:3000')
       } catch (err) {
-        console.log("%c⧭", "color: #aa00ff", err);
         console.log("une erreur s'est produite");
       }
     };
     createOrEditWilder();
+  };
+
+  const addNote = () => {
+    let note = {} as INoteData;
+    setNotes([...notes, note]);
   };
 
   const getWilder = useCallback(
@@ -70,16 +69,16 @@ function Formulaire(): JSX.Element {
         //pensez à regarder l'opérateur "in" ici : https://www.typescriptlang.org/docs/handbook/2/narrowing.html#the-in-operator-narrowing
         return navigate("/errors/404");
       }
-      setState(result as IWilder); //puisque "result" peut être de type IWilder ou ImessageWithSuccess
+      let wilder = result as IWilder; //puisque "result" peut être de type IWilder ou ImessageWithSuccess
+      setState(wilder);
+      setNotes(wilder.notes);
     },
     [navigate]
   );
 
-  console.log("%c⧭", "color: #00bf00", getWilder);
-  useEffect(() => {
-    const control = controller.current;
-    return () => control.abort();
-  }, [state]);
+  const changeNote = (notes: INoteData[]) => {
+    setNotes(notes);
+  };
 
   useEffect(() => {
     const id: string | null = searchparams.get("id");
@@ -87,6 +86,7 @@ function Formulaire(): JSX.Element {
       getWilder(id); // lorsque le param id est défini, on va récupérer le wilder
     } else {
       setState(initialState); //remet le wilder à l'état initial si je me retrouve dans l'ajout
+      setNotes([]);
     }
   }, [searchparams, getWilder, initialState]);
 
@@ -98,13 +98,21 @@ function Formulaire(): JSX.Element {
           onChange={handleChange}
           value={state.first_name}
           name="first_name"
+          placeholder="Firstname"
         />
         <input
           onChange={handleChange}
           value={state.last_name}
           name="last_name"
+          placeholder="Lastname"
         />
-        <input onChange={handleChange} value={state.email} name="email" />
+        <input
+          onChange={handleChange}
+          value={state.email}
+          name="email"
+          placeholder="Email"
+        />
+        <AssignNote notes={notes} addNote={addNote} changeNote={changeNote} />
         <button>Valider</button>
       </form>
     </div>
