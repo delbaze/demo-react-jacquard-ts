@@ -21,6 +21,7 @@ function Formulaire(): JSX.Element {
   );
   const [state, setState] = useState<InitialWilder | IWilder>(initialState);
   const [notes, setNotes] = useState<INoteData[]>([]);
+  const [file, setFile] = useState<File>();
   //au changement de chaque input je vais récupérer le name depuis l'évènement, pour pouvoir atteindre dynamiquement la clé de l'objet "state"
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
     setState((state) => ({ ...state, [e.target.name]: e.target.value })); //setState((state) => ({...state, first_name: e.target.value }))
@@ -29,6 +30,12 @@ function Formulaire(): JSX.Element {
   //méthode appelée lors du submit du formulaire
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>): void => {
     e.preventDefault(); //on stope le comportement par défaut du formulaire à partir de l'évènement du submit, pour éviter de rafraichir la page et nous permettre de travailler de manière programmée les données
+    const formData = new FormData();
+    formData.append("first_name", state.first_name);
+    formData.append("last_name", state.last_name);
+    formData.append("email", state.email);
+    formData.append("notes", JSON.stringify(notes));
+    formData.append("avatar", file as Blob);
 
     const createOrEditWilder = async (): Promise<void> => {
       try {
@@ -38,10 +45,11 @@ function Formulaire(): JSX.Element {
             : `${process.env.REACT_APP_BACK_URL}/wilder/create`,
           {
             method: state.id ? "PATCH" : "POST", //ne pas oublier le post ici puisque par défaut fetch est en GET
-            headers: {
-              "Content-Type": "application/json", //permet d'indiquer dans la requête que nous envoyons du json
-            },
-            body: JSON.stringify({ ...state, notes }), //le body doit être en chaine de caractère pour fetch, d'où le JSON.stringify()
+            // headers: {
+            //   "Content-Type": "application/json", //permet d'indiquer dans la requête que nous envoyons du json
+            // },
+            body: formData,
+            // body: JSON.stringify({ ...state, notes }), //le body doit être en chaine de caractère pour fetch, d'où le JSON.stringify()
           }
         );
         await response.json(); //on attend le traitement json de la réponse.
@@ -58,9 +66,6 @@ function Formulaire(): JSX.Element {
     setNotes([...notes, note]);
   };
 
-  useEffect(() => {
-    console.log("NOTES" , notes);
-  }, [notes])
   const getWilder = useCallback(
     async (id: string): Promise<void> => {
       let response = await fetch(
@@ -73,6 +78,7 @@ function Formulaire(): JSX.Element {
         return navigate("/errors/404");
       }
       let wilder = result as IWilder; //puisque "result" peut être de type IWilder ou ImessageWithSuccess
+      console.log("%c⧭", "color: #ffcc00", wilder);
       setState(wilder);
       setNotes(wilder.notes);
     },
@@ -81,6 +87,11 @@ function Formulaire(): JSX.Element {
 
   const changeNote = (notes: INoteData[]) => {
     setNotes(notes);
+  };
+  const handleChangeFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files?.length) {
+      setFile(e.target.files[0]);
+    }
   };
 
   useEffect(() => {
@@ -116,6 +127,7 @@ function Formulaire(): JSX.Element {
           placeholder="Email"
         />
         <AssignNote notes={notes} addNote={addNote} changeNote={changeNote} />
+        <input type="file" name="avatar" onChange={handleChangeFile} />
         <button>Valider</button>
       </form>
     </div>

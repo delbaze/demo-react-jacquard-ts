@@ -102,8 +102,8 @@ function AssignNote({ notes, addNote, changeNote }: IAssignNote): JSX.Element {
               <option></option>
               {/* {languages.map((l, index) => ( */}
               {getFilteredLanguages(n).map((l, index) => (
-                <option key={index} value={l.id}>
-                  {l.label}
+                <option key={index} value={l?.id}>
+                  {l?.label}
                 </option>
               ))}
             </select>
