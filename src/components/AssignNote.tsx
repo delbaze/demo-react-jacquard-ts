@@ -25,17 +25,23 @@ function AssignNote({ notes, addNote, changeNote }: IAssignNote): JSX.Element {
       (l) => !selectedLanguages.includes(l.id)
     );
     if (Object.keys(note).length) {
-      listLanguages.push(note.language);
+      listLanguages.push(note.language); //listLanguages est une copie de languages qui est un tableau de ILanguage.
+      //note.language est de type ILanguage
     }
     return listLanguages;
   };
+
   const handleSelect = (
     e: React.ChangeEvent<HTMLSelectElement>,
     noteIndex: number
   ) => {
     let oldNotes: INoteData[] = [...notes];
     let note = oldNotes[noteIndex];
-    let oldLanguagesSelected = [...selectedLanguages];
+    let previousLanguageId = note?.language?.id;
+    
+    let oldLanguagesSelected = [...selectedLanguages].filter(
+      (sl) => sl != previousLanguageId
+    );
     let language: ILanguage | undefined = languages.find(
       (l) => l.id === e.target.value
     );
@@ -59,7 +65,9 @@ function AssignNote({ notes, addNote, changeNote }: IAssignNote): JSX.Element {
     e: React.ChangeEvent<HTMLInputElement>,
     noteIndex: number
   ) => {
-    let oldNotes: INoteData[] = [...notes];
+    //aller chercher la note existante dans le tableau  de notes
+    //ensuite je devrais modifier la note dans ce tableau pour y mettre la valeur de l'input
+    let oldNotes: INoteData[] = [...notes]; // les états ne peuvent pas être modifiés directement, donc je fais un deep clone du tableau
     oldNotes[noteIndex].note = e.target.value as any as number;
     changeNote(oldNotes);
   };
@@ -84,17 +92,18 @@ function AssignNote({ notes, addNote, changeNote }: IAssignNote): JSX.Element {
               onChange={(e) => handleChangeNote(e, index)}
               type="number"
               min={0}
-              value={n?.note || ""}
+              value={n.note || ""}
             />
             <select
               onChange={(e) => handleSelect(e, index)}
-              value={n?.language?.id}
+              value={n.language?.id}
               // value={getFilteredLanguages(n)[0].label}
             >
               <option></option>
+              {/* {languages.map((l, index) => ( */}
               {getFilteredLanguages(n).map((l, index) => (
-                <option key={index} value={l?.id}>
-                  {l?.label}
+                <option key={index} value={l.id}>
+                  {l.label}
                 </option>
               ))}
             </select>

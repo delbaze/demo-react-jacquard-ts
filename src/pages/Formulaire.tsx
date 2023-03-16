@@ -58,6 +58,9 @@ function Formulaire(): JSX.Element {
     setNotes([...notes, note]);
   };
 
+  useEffect(() => {
+    console.log("NOTES" , notes);
+  }, [notes])
   const getWilder = useCallback(
     async (id: string): Promise<void> => {
       let response = await fetch(
