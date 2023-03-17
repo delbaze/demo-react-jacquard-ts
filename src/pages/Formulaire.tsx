@@ -1,5 +1,6 @@
 import { INoteData, IWilder } from "../components/components";
 import { useEffect, useMemo, useState, useCallback } from "react";
+
 import {
   NavigateFunction,
   useNavigate,
@@ -22,6 +23,8 @@ function Formulaire(): JSX.Element {
   const [state, setState] = useState<InitialWilder | IWilder>(initialState);
   const [notes, setNotes] = useState<INoteData[]>([]);
   const [file, setFile] = useState<File>();
+  const [filePreview, setFilePreview] = useState<string>("/default.png"); //image par défaut stockée dans le dossier public
+  //lorsque le nom de l'image stocké en back sera sauvegardé en base, il faudra penser à modifier le "filePreview" avec l'url correspondant à l'image du wilder et non celle par défaut
   //au changement de chaque input je vais récupérer le name depuis l'évènement, pour pouvoir atteindre dynamiquement la clé de l'objet "state"
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
     setState((state) => ({ ...state, [e.target.name]: e.target.value })); //setState((state) => ({...state, first_name: e.target.value }))
@@ -35,7 +38,7 @@ function Formulaire(): JSX.Element {
     formData.append("last_name", state.last_name);
     formData.append("email", state.email);
     formData.append("notes", JSON.stringify(notes));
-    formData.append("avatar", file as Blob);
+    formData.append("avatar", file as any);
 
     const createOrEditWilder = async (): Promise<void> => {
       try {
@@ -90,7 +93,10 @@ function Formulaire(): JSX.Element {
   };
   const handleChangeFile = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files?.length) {
-      setFile(e.target.files[0]);
+      let file = e.target.files[0];
+      setFile(file);
+      let objectURL = URL.createObjectURL(file);
+      setFilePreview(objectURL);
     }
   };
 
@@ -128,6 +134,7 @@ function Formulaire(): JSX.Element {
         />
         <AssignNote notes={notes} addNote={addNote} changeNote={changeNote} />
         <input type="file" name="avatar" onChange={handleChangeFile} />
+        <img className="preview" width={100} height={100} src={filePreview} />
         <button>Valider</button>
       </form>
     </div>
