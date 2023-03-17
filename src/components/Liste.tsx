@@ -3,6 +3,7 @@ import { IWilder } from "./components.d";
 import { useEffect, useRef, useState } from "react";
 function Liste(): JSX.Element {
   const [wilderList, setWilderList] = useState<IWilder[]>([]);
+  console.log('%c⧭', 'color: #f279ca', wilderList);
   const controller = useRef(new AbortController());
   const recupData = async () => {
     const signal = controller.current.signal;

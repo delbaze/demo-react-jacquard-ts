@@ -6,3 +6,7 @@ export interface IMessageWithSuccess {
 export interface InitialWilder extends Omit<IWilder, "notes"> {
   id: null;
 }
+
+export interface DragEvent<T = Element> extends MouseEvent<T, NativeDragEvent> {
+  dataTransfer: DataTransfer;
+}

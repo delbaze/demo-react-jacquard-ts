@@ -27,12 +27,62 @@
 .App-link {
   color: #61dafb;
 }
-
-.preview {
-  box-shadow: rgba(100, 100, 111, 0.2) 0px 7px 29px 0px;
-  padding:0.5rem;
+.container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+.form {
+  display: flex;
+  flex-direction: column;
+  width: 20rem;
 }
 
+.form ul {
+  padding: 0;
+}
+.form li {
+  list-style: none;
+  display: flex;
+}
+.form input {
+  flex: 3;
+  height: inherit;
+}
+.form select {
+  flex: 1;
+  height: inherit;
+}
+.form div.fileBloc {
+  display: flex;
+  height: 8rem;
+  margin: 1rem;
+  position: relative;
+}
+img.preview {
+  box-shadow: rgba(100, 100, 111, 0.2) 0px 7px 29px 0px;
+  padding: 0.5rem;
+  height: calc(100% - 0.6rem);
+  width: 5rem;
+  object-fit: contain;
+}
+label.dropArea {
+  background-color: cyan;
+  border: dashed 0.2rem gray;
+  flex: 5;
+  height: inherit;
+}
+.draggingOver > label.dropArea {
+  background-color: rgb(216, 216, 216);
+}
+
+div.instructions {
+  height: inherit;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
 @keyframes App-logo-spin {
   from {
     transform: rotate(0deg);

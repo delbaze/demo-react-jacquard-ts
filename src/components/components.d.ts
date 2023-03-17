@@ -4,6 +4,7 @@ export interface IWilder {
   last_name: string;
   email: string;
   notes: INote[];
+  avatar?: string | null;
 }
 
 export interface INote {

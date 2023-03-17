@@ -1,4 +1,5 @@
 import { INoteData, IWilder } from "../components/components";
+
 import { useEffect, useMemo, useState, useCallback } from "react";
 
 import {
@@ -7,7 +8,7 @@ import {
   useSearchParams,
 } from "react-router-dom"; //hook permettant de gérer la navigation depuis react router dom
 
-import { IMessageWithSuccess, InitialWilder } from "./pages.d";
+import { IMessageWithSuccess, InitialWilder, DragEvent } from "./pages.d";
 import AssignNote from "../components/AssignNote";
 
 function Formulaire(): JSX.Element {
@@ -24,6 +25,7 @@ function Formulaire(): JSX.Element {
   const [notes, setNotes] = useState<INoteData[]>([]);
   const [file, setFile] = useState<File>();
   const [filePreview, setFilePreview] = useState<string>("/default.png"); //image par défaut stockée dans le dossier public
+  const [draggingOver, setDraggingOver] = useState<boolean>(false);
   //lorsque le nom de l'image stocké en back sera sauvegardé en base, il faudra penser à modifier le "filePreview" avec l'url correspondant à l'image du wilder et non celle par défaut
   //au changement de chaque input je vais récupérer le name depuis l'évènement, pour pouvoir atteindre dynamiquement la clé de l'objet "state"
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
@@ -48,11 +50,7 @@ function Formulaire(): JSX.Element {
             : `${process.env.REACT_APP_BACK_URL}/wilder/create`,
           {
             method: state.id ? "PATCH" : "POST", //ne pas oublier le post ici puisque par défaut fetch est en GET
-            // headers: {
-            //   "Content-Type": "application/json", //permet d'indiquer dans la requête que nous envoyons du json
-            // },
             body: formData,
-            // body: JSON.stringify({ ...state, notes }), //le body doit être en chaine de caractère pour fetch, d'où le JSON.stringify()
           }
         );
         await response.json(); //on attend le traitement json de la réponse.
@@ -81,7 +79,6 @@ function Formulaire(): JSX.Element {
         return navigate("/errors/404");
       }
       let wilder = result as IWilder; //puisque "result" peut être de type IWilder ou ImessageWithSuccess
-      console.log("%c⧭", "color: #ffcc00", wilder);
       setState(wilder);
       setNotes(wilder.notes);
     },
@@ -99,6 +96,31 @@ function Formulaire(): JSX.Element {
       setFilePreview(objectURL);
     }
   };
+  const handleDragEnter = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDraggingOver(true);
+  };
+  const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDraggingOver(false);
+  };
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    e.dataTransfer.dropEffect = "copy";
+  };
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    let file = e.dataTransfer.files[0];
+    let objectURL = URL.createObjectURL(file);
+    setFilePreview(objectURL);
+    setDraggingOver(false);
+    setFile(file);
+    e.dataTransfer.clearData();
+  };
 
   useEffect(() => {
     const id: string | null = searchparams.get("id");
@@ -111,9 +133,9 @@ function Formulaire(): JSX.Element {
   }, [searchparams, getWilder, initialState]);
 
   return (
-    <div>
+    <div className="container">
       <h1>{state.id ? "Editer un wilder" : "Ajouter un wilder"}</h1>
-      <form onSubmit={handleSubmit}>
+      <form onSubmit={handleSubmit} className="form">
         <input
           onChange={handleChange}
           value={state.first_name}
@@ -126,6 +148,7 @@ function Formulaire(): JSX.Element {
           name="last_name"
           placeholder="Lastname"
         />
+
         <input
           onChange={handleChange}
           value={state.email}
@@ -133,8 +156,29 @@ function Formulaire(): JSX.Element {
           placeholder="Email"
         />
         <AssignNote notes={notes} addNote={addNote} changeNote={changeNote} />
-        <input type="file" name="avatar" onChange={handleChangeFile} />
-        <img className="preview" width={100} height={100} src={filePreview} />
+        <div
+          className={`fileBloc ${draggingOver ? "draggingOver" : ""}`}
+          draggable={true}
+          onDrop={(e) => handleDrop(e)}
+          onDragOver={(e) => handleDragOver(e)}
+          onDragEnter={(e) => handleDragEnter(e)}
+          onDragLeave={(e) => handleDragLeave(e)}
+        >
+          <label className="dropArea" htmlFor="avatar">
+            <div className="instructions">
+              Glissez un fichier ici ou cliquez
+            </div>
+            <input
+              type="file"
+              id="avatar"
+              name="avatar"
+              onChange={handleChangeFile}
+              hidden
+            />
+          </label>
+          <img className="preview" src={filePreview} />
+        </div>
+
         <button>Valider</button>
       </form>
     </div>
