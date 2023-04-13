@@ -1,27 +1,15 @@
-import { useCallback, useEffect, useState } from "react";
+import { useState } from "react";
 import { IAssignNote, ILanguage, INoteData } from "./components.d";
-import { IMessageWithSuccess } from "../pages/pages";
 import { useNavigate } from "react-router-dom";
+import { useQuery } from "@apollo/client";
+import { LIST_LANGUAGES } from "../graphql/queries/languages.query";
 
 function AssignNote({ notes, addNote, changeNote }: IAssignNote): JSX.Element {
-  const navigate = useNavigate();
-  const [languages, setLanguages] = useState<ILanguage[]>([]);
   const [selectedLanguages, setSelectedLanguages] = useState<string[]>([]);
-
-  const getLanguages = useCallback(async (): Promise<void> => {
-    let response = await fetch(
-      `${process.env.REACT_APP_BACK_URL}/language/list`
-    );
-    const result: ILanguage[] | IMessageWithSuccess = await response.json();
-    if (response.status !== 200 && "success" in result && !result.success) {
-      return navigate("/errors/500");
-    }
-
-    setLanguages(result as ILanguage[]); //puisque "result" peut être de type IWilder ou ImessageWithSuccess
-  }, []);
+  const { data } = useQuery(LIST_LANGUAGES);
 
   const getFilteredLanguages = (note: INoteData) => {
-    let listLanguages = [...languages].filter(
+    let listLanguages = [...data?.languageList].filter(
       (l) => !selectedLanguages.includes(l.id)
     );
     if (Object.keys(note).length) {
@@ -38,12 +26,12 @@ function AssignNote({ notes, addNote, changeNote }: IAssignNote): JSX.Element {
     let oldNotes: INoteData[] = [...notes];
     let note = oldNotes[noteIndex];
     let previousLanguageId = note?.language?.id;
-    
+
     let oldLanguagesSelected = [...selectedLanguages].filter(
       (sl) => sl != previousLanguageId
     );
-    let language: ILanguage | undefined = languages.find(
-      (l) => l.id === e.target.value
+    let language: ILanguage | undefined = data?.languageList.find(
+      (l: any) => l.id === e.target.value
     );
     if (language && note) {
       note.language = language;
@@ -68,18 +56,15 @@ function AssignNote({ notes, addNote, changeNote }: IAssignNote): JSX.Element {
     //aller chercher la note existante dans le tableau  de notes
     //ensuite je devrais modifier la note dans ce tableau pour y mettre la valeur de l'input
     let oldNotes: INoteData[] = [...notes]; // les états ne peuvent pas être modifiés directement, donc je fais un deep clone du tableau
-    oldNotes[noteIndex].note = e.target.value as any as number;
+    oldNotes[noteIndex].note = +e.target.value;
     changeNote(oldNotes);
   };
-  useEffect(() => {
-    getLanguages();
-  }, []);
 
   return (
     <div>
       <button
         type="button"
-        disabled={notes.length === languages.length}
+        disabled={notes.length === data?.languageList?.length}
         onClick={addNote}
       >
         Ajouter une note

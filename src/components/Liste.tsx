@@ -1,31 +1,18 @@
 import WilderDetail from "./WilderDetail";
-import { IWilder } from "./components.d";
-import { useEffect, useRef, useState } from "react";
+import { useEffect } from "react";
+import { useQuery } from "@apollo/client";
+import { LIST_WILDERS } from "../graphql/queries/wilders.query";
 function Liste(): JSX.Element {
-  const [wilderList, setWilderList] = useState<IWilder[]>([]);
-  console.log('%c⧭', 'color: #f279ca', wilderList);
-  const controller = useRef(new AbortController());
-  const recupData = async () => {
-    const signal = controller.current.signal;
-    let response = await fetch(
-      `${process.env.REACT_APP_BACK_URL}/wilder/list`,
-      {
-        signal,
-      }
-    );
-    let data = await response.json();
-    setWilderList(data);
-  };
-  useEffect(() => {
-    recupData();
-    return () => controller.current.abort();
-  }, []);
+  const { data, refetch } = useQuery(LIST_WILDERS);
 
+  useEffect(() => {
+    refetch();
+  }, []);
   return (
     <div>
       Liste
-      {wilderList &&
-        wilderList.map((wilder) => {
+      {data &&
+        data.wilderList.map((wilder: any) => {
           return <WilderDetail key={wilder.id} wilder={wilder} />;
         })}
     </div>

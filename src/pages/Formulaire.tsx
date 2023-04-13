@@ -8,13 +8,32 @@ import {
   useSearchParams,
 } from "react-router-dom"; //hook permettant de gérer la navigation depuis react router dom
 
-import { IMessageWithSuccess, InitialWilder, DragEvent } from "./pages.d";
+import { InitialWilder } from "./pages.d";
 import AssignNote from "../components/AssignNote";
+import { useLazyQuery, useMutation } from "@apollo/client";
+import {
+  CREATE_WILDER,
+  UPDATE_WILDER,
+} from "../graphql/mutations/wilders.mutation";
+import { FIND_WILDER } from "../graphql/queries/wilders.query";
 
 function Formulaire(): JSX.Element {
   const navigate: NavigateFunction = useNavigate(); //récupération de la méthode de navigation depuis useNavigate
+
   const [searchparams]: [URLSearchParams, Function] = useSearchParams();
 
+  const [addWilder] = useMutation(CREATE_WILDER, {
+    onError(error) {
+      console.log("ERROR", error);
+    },
+    onCompleted(data) {
+      console.log("DATA", data);
+    },
+  });
+
+  const [updateWilder] = useMutation(UPDATE_WILDER);
+
+  const [findWilder] = useLazyQuery(FIND_WILDER);
   const initialState: InitialWilder = useMemo(
     // le type InitialWilder est comme IWilder mais sans les notes et avec l'id  null (voir le fichier de définition)
     //on déclare un état "state" qui contient un objet
@@ -35,25 +54,31 @@ function Formulaire(): JSX.Element {
   //méthode appelée lors du submit du formulaire
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>): void => {
     e.preventDefault(); //on stope le comportement par défaut du formulaire à partir de l'évènement du submit, pour éviter de rafraichir la page et nous permettre de travailler de manière programmée les données
-    const formData = new FormData();
-    formData.append("first_name", state.first_name);
-    formData.append("last_name", state.last_name);
-    formData.append("email", state.email);
-    formData.append("notes", JSON.stringify(notes));
-    formData.append("avatar", file as any);
-
     const createOrEditWilder = async (): Promise<void> => {
       try {
-        let response: Response = await fetch(
-          state.id
-            ? `${process.env.REACT_APP_BACK_URL}/wilder/update/${state.id}`
-            : `${process.env.REACT_APP_BACK_URL}/wilder/create`,
-          {
-            method: state.id ? "PATCH" : "POST", //ne pas oublier le post ici puisque par défaut fetch est en GET
-            body: formData,
-          }
-        );
-        await response.json(); //on attend le traitement json de la réponse.
+        state.id
+          ? updateWilder({
+              variables: {
+                updateWilder: {
+                  id: state.id,
+                  email: state.email,
+                  first_name: state.first_name,
+                  last_name: state.last_name,
+                  notes,
+                  // avatar: state.avatar,
+                },
+              },
+            })
+          : addWilder({
+              variables: {
+                wilderCreate: {
+                  email: state.email,
+                  first_name: state.first_name,
+                  last_name: state.last_name,
+                  notes,
+                },
+              },
+            });
         navigate("/"); //on basculer sur l'accueil si tout s'est bien passé
       } catch (err) {
         console.log("une erreur s'est produite");
@@ -69,18 +94,16 @@ function Formulaire(): JSX.Element {
 
   const getWilder = useCallback(
     async (id: string): Promise<void> => {
-      let response = await fetch(
-        `${process.env.REACT_APP_BACK_URL}/wilder/find/${id}`
-      );
-      const result: IWilder | IMessageWithSuccess = await response.json();
-      if (response.status !== 200 && "success" in result && !result.success) {
-        // le "success" in result permet de savoir si je suis dans le cas d'un IMessageWithSuccess ou non, puisque "result" peut être de type IWilder ou IMessageWithSuccess
-        //pensez à regarder l'opérateur "in" ici : https://www.typescriptlang.org/docs/handbook/2/narrowing.html#the-in-operator-narrowing
-        return navigate("/errors/404");
-      }
-      let wilder = result as IWilder; //puisque "result" peut être de type IWilder ou ImessageWithSuccess
-      setState(wilder);
-      setNotes(wilder.notes);
+      findWilder({
+        onCompleted(data) {
+          const { findWilder: wilder } = data;
+          setState(wilder);
+          setNotes(wilder.notes);
+        },
+        variables: {
+          findWilderId: id,
+        },
+      });
     },
     [navigate]
   );
